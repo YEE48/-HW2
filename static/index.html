@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="타자 실력을 측정하고 게임으로 연습하는 TypeSprint" />
+    <title>TypeSprint — 타자 측정 & 게임</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/static/style.css" />
+    <script defer src="/static/app.js"></script>
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="topbar">
+        <a class="brand" href="/" aria-label="TypeSprint 홈">
+          <span class="brand-mark">TS</span>
+          <span>TypeSprint</span>
+        </a>
+        <div class="topbar-note"><span class="status-dot"></span> 로컬 연습 모드</div>
+      </header>
+
+      <main>
+        <section class="hero" aria-labelledby="page-title">
+          <div>
+            <p class="eyebrow">BUILD YOUR FLOW</p>
+            <h1 id="page-title">손끝의 속도를<br /><em>리듬</em>으로 바꾸세요.</h1>
+            <p class="hero-copy">짧게 측정하고, 빠르게 게임하고,<br />매일 조금씩 더 정확하게.</p>
+          </div>
+          <div class="hero-stat" aria-label="오늘의 목표">
+            <span class="stat-label">TODAY'S FOCUS</span>
+            <strong>속도보다<br />정확도</strong>
+            <span class="stat-arrow">↗</span>
+          </div>
+        </section>
+
+        <div id="error-banner" class="error-banner" role="alert" hidden>
+          <span>!</span><p></p><button type="button" class="dismiss-error" aria-label="오류 닫기">×</button>
+        </div>
+
+        <nav class="mode-tabs" aria-label="연습 모드">
+          <button class="mode-tab is-active" type="button" data-mode="test" aria-selected="true">
+            <span class="tab-number">01</span><span><strong>타자 측정</strong><small>나의 기본기를 확인해요</small></span>
+          </button>
+          <button class="mode-tab" type="button" data-mode="game" aria-selected="false">
+            <span class="tab-number">02</span><span><strong>타자 게임</strong><small>떨어지는 단어를 잡아보세요</small></span>
+          </button>
+        </nav>
+
+        <section id="test-panel" class="panel" aria-labelledby="test-heading">
+          <div class="panel-heading">
+            <div><p class="panel-kicker">SPEED TEST</p><h2 id="test-heading">문장을 완성해 보세요.</h2></div>
+            <button id="new-sentence" class="text-button" type="button">새 문장 <span>↻</span></button>
+          </div>
+          <div class="sentence-card">
+            <p id="sentence-text" class="sentence-text" aria-label="입력할 문장"></p>
+            <div class="progress-track"><div id="sentence-progress" class="progress-value"></div></div>
+          </div>
+          <label class="sr-only" for="typing-input">문장 입력</label>
+          <textarea id="typing-input" class="typing-input" rows="3" placeholder="위 문장을 그대로 입력해 보세요..." spellcheck="false" autocomplete="off"></textarea>
+          <div class="metrics" aria-live="polite">
+            <div class="metric"><span>WPM</span><strong id="wpm-value">0</strong><small>분당 단어</small></div>
+            <div class="metric"><span>정확도</span><strong id="accuracy-value">100<sup>%</sup></strong><small>현재 입력 기준</small></div>
+            <div class="metric"><span>오타</span><strong id="errors-value">0</strong><small>문자 불일치</small></div>
+            <div class="metric metric-time"><span>시간</span><strong id="test-time-value">0<sup>초</sup></strong><small>입력 시간</small></div>
+          </div>
+          <div class="panel-footer"><span id="test-status" class="hint"><i></i> 입력을 시작하면 측정됩니다</span><button id="reset-test" class="outline-button" type="button">초기화</button></div>
+        </section>
+
+        <section id="game-panel" class="panel game-panel" aria-labelledby="game-heading" hidden>
+          <div class="panel-heading">
+            <div><p class="panel-kicker">WORD DROP</p><h2 id="game-heading">단어를 놓치지 마세요.</h2></div>
+            <div class="game-rules"><span>60초</span><span>♥ ♥ ♥</span></div>
+          </div>
+          <div id="game-arena" class="game-arena">
+            <div class="game-overlay" id="game-overlay">
+              <div class="play-icon">▶</div><strong>준비되셨나요?</strong><span>시작 버튼을 누르고 단어를 입력하세요.</span>
+            </div>
+          </div>
+          <div class="game-toolbar">
+            <div class="game-score"><span>SCORE</span><strong id="score-value">0</strong></div>
+            <div class="game-timer"><span>TIME</span><strong id="game-time-value">60</strong></div>
+            <div class="game-lives"><span>LIVES</span><strong id="lives-value">♥ ♥ ♥</strong></div>
+            <label class="sr-only" for="game-input">떨어지는 단어 입력</label>
+            <input id="game-input" class="game-input" type="text" placeholder="여기에 단어 입력" spellcheck="false" autocomplete="off" disabled />
+            <button id="start-game" class="primary-button" type="button">게임 시작 <span>→</span></button>
+          </div>
+          <p id="game-status" class="game-status" aria-live="polite">단어가 바닥에 닿기 전에 입력하세요.</p>
+        </section>
+      </main>
+      <footer class="footer"><span>TYPE SPRINT / 2026</span><span>LOCAL FIRST · FASTAPI</span></footer>
+    </div>
+  </body>
+</html>
