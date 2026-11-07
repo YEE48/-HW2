@@ -92,51 +92,6 @@ jobs:
       IMAGE_NAME: ${{ secrets.DOCKERHUB_USERNAME }}/typing-defense-hw2
 
     steps:
-      - name: Log in to Docker Hub
-        shell: powershell
-        env:
-          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
-          DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
-        run: |
-          $ErrorActionPreference = 'Stop'
-          $username = $env:DOCKERHUB_USERNAME.Trim()
-          $token = $env:DOCKERHUB_TOKEN.Trim()
-          if ([string]::IsNullOrWhiteSpace($username) -or [string]::IsNullOrWhiteSpace($token)) {
-            throw 'Docker Hub credentials are missing.'
-          }
-
-          $startInfo = New-Object System.Diagnostics.ProcessStartInfo
-          $startInfo.FileName = 'docker'
-          $startInfo.Arguments = "login --username $username --password-stdin"
-          $startInfo.UseShellExecute = $false
-          $startInfo.CreateNoWindow = $true
-          $startInfo.RedirectStandardInput = $true
-          $startInfo.RedirectStandardOutput = $true
-          $startInfo.RedirectStandardError = $true
-
-          $dockerLogin = New-Object System.Diagnostics.Process
-          $dockerLogin.StartInfo = $startInfo
-          [void]$dockerLogin.Start()
-
-          # Windows PowerShell 5.1의 네이티브 stdin 변환을 피하고,
-          # BOM·추가 개행이 없는 UTF-8 바이트로 토큰을 전달합니다.
-          $tokenBytes = [System.Text.Encoding]::UTF8.GetBytes($token)
-          $dockerLogin.StandardInput.BaseStream.Write($tokenBytes, 0, $tokenBytes.Length)
-          $dockerLogin.StandardInput.BaseStream.Close()
-
-          $stdoutTask = $dockerLogin.StandardOutput.ReadToEndAsync()
-          $stderrTask = $dockerLogin.StandardError.ReadToEndAsync()
-          $dockerLogin.WaitForExit()
-          $stdout = $stdoutTask.Result
-          $stderr = $stderrTask.Result
-
-          if ($dockerLogin.ExitCode -ne 0) {
-            # 토큰·Docker 출력은 로그에 남기지 않습니다.
-            throw "Docker Hub login failed with exit code $($dockerLogin.ExitCode)."
-          }
-
-          Write-Host 'Docker Hub login succeeded.'
-
       - name: Pull CI image by commit SHA
         shell: powershell
         run: |
