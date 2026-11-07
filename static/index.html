@@ -9,6 +9,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="/static/style.css" />
+    <script defer src="/static/game-config.js"></script>
     <script defer src="/static/app.js"></script>
   </head>
   <body>
@@ -71,11 +72,22 @@
         <section id="game-panel" class="panel game-panel" aria-labelledby="game-heading" hidden>
           <div class="panel-heading">
             <div><p class="panel-kicker">WORD DROP</p><h2 id="game-heading">단어를 놓치지 마세요.</h2></div>
-            <div class="game-rules"><span>60초</span><span>♥ ♥ ♥</span></div>
+            <div class="game-heading-tools">
+              <div class="difficulty-picker" role="group" aria-label="게임 난이도 선택">
+                <span>DIFFICULTY</span>
+                <div class="difficulty-options">
+                  <button class="difficulty-button" type="button" data-difficulty="easy" aria-pressed="false">Easy</button>
+                  <button class="difficulty-button is-selected" type="button" data-difficulty="normal" aria-pressed="true">Normal</button>
+                  <button class="difficulty-button" type="button" data-difficulty="hard" aria-pressed="false">Hard</button>
+                </div>
+                <small id="difficulty-summary">Normal · 22–40 px/s · 1.45초 간격</small>
+              </div>
+              <div class="game-rules"><span>60초</span><span>♥ ♥ ♥</span></div>
+            </div>
           </div>
           <div id="game-arena" class="game-arena">
             <div class="game-overlay" id="game-overlay">
-              <div class="play-icon">▶</div><strong>준비되셨나요?</strong><span>시작 버튼을 누르고 단어를 입력하세요.</span>
+              <div class="play-icon">▶</div><strong>준비되셨나요?</strong><span>난이도를 선택하고 시작 버튼을 누르세요.</span>
             </div>
           </div>
           <div class="game-toolbar">

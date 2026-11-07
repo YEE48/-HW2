@@ -6,6 +6,8 @@ const sentences = [
 ];
 
 const wordBank = ["focus", "rhythm", "bright", "create", "steady", "signal", "little", "moment", "result", "power", "dream", "build", "swift", "calm", "practice", "future", "learn", "flow", "pixel", "spark", "green", "magic", "hello", "world", "type", "brave", "clear", "motion", "energy", "simple"];
+const GAME_DIFFICULTIES = window.TYPE_SPRINT_GAME_CONFIG;
+const GAME_SPEED = window.TYPE_SPRINT_GAME_SPEED;
 
 const $ = (selector) => document.querySelector(selector);
 const sentenceEl = $("#sentence-text");
@@ -61,9 +63,19 @@ $("#reset-test").addEventListener("click", () => resetTest());
 $("#new-sentence").addEventListener("click", () => resetTest(true));
 $(".dismiss-error").addEventListener("click", hideError);
 
-const game = { active: false, score: 0, lives: 3, time: 60, words: [], animation: 0, tick: null, spawn: null, lastTime: 0 };
+const game = { active: false, score: 0, lives: 3, time: 60, difficulty: "normal", words: [], animation: 0, tick: null, spawn: null, lastTime: 0 };
 const arena = $("#game-arena");
 const gameInput = $("#game-input");
+
+function updateDifficultyUI() {
+  const settings = GAME_DIFFICULTIES[game.difficulty];
+  document.querySelectorAll(".difficulty-button").forEach((button) => {
+    const selected = button.dataset.difficulty === game.difficulty;
+    button.classList.toggle("is-selected", selected);
+    button.setAttribute("aria-pressed", selected);
+  });
+  $("#difficulty-summary").textContent = `${settings.label} · ${settings.speedMin}–${settings.speedMax} px/s · ${(settings.spawnInterval / 1000).toFixed(2)}초 간격`;
+}
 
 function updateGameHud() {
   $("#score-value").textContent = game.score;
@@ -76,7 +88,7 @@ function removeWord(word) { word.el?.remove(); game.words = game.words.filter((i
 function spawnWord() {
   if (!game.active) return;
   const text = wordBank[Math.floor(Math.random() * wordBank.length)];
-  const word = { text, x: 7 + Math.random() * 86, y: -10, speed: 22 + Math.random() * 18, el: document.createElement("span") };
+  const word = { text, x: 7 + Math.random() * 86, y: -10, speed: GAME_SPEED(game.difficulty, Math.random()), el: document.createElement("span") };
   word.el.className = "falling-word"; word.el.textContent = text; word.el.style.left = `${word.x}%`; word.el.style.top = `${word.y}px`;
   arena.appendChild(word.el); game.words.push(word);
 }
@@ -99,9 +111,10 @@ function gameFrame(timestamp) {
 }
 
 function startGame() {
+  const settings = GAME_DIFFICULTIES[game.difficulty];
   game.words.forEach((word) => word.el.remove()); game.words = []; game.active = true; game.score = 0; game.lives = 3; game.time = 60;
   updateGameHud(); gameInput.value = ""; gameInput.disabled = false; gameInput.focus(); $("#start-game").textContent = "재시작 →"; $("#game-status").textContent = "단어가 바닥에 닿기 전에 입력하세요."; $("#game-overlay").hidden = true;
-  clearInterval(game.tick); clearInterval(game.spawn); game.tick = setInterval(() => { game.time -= 1; updateGameHud(); if (game.time <= 0) endGame("60초가 끝났어요. 훌륭한 플레이였습니다!"); }, 1000); game.spawn = setInterval(spawnWord, 1450);
+  clearInterval(game.tick); clearInterval(game.spawn); game.tick = setInterval(() => { game.time -= 1; updateGameHud(); if (game.time <= 0) endGame("60초가 끝났어요. 훌륭한 플레이였습니다!"); }, 1000); game.spawn = setInterval(spawnWord, settings.spawnInterval);
   spawnWord(); game.lastTime = performance.now(); game.animation = requestAnimationFrame(gameFrame);
 }
 
@@ -112,6 +125,12 @@ gameInput.addEventListener("input", () => {
 });
 $("#start-game").addEventListener("click", startGame);
 
+document.querySelectorAll(".difficulty-button").forEach((button) => button.addEventListener("click", () => {
+  if (game.active) return;
+  game.difficulty = button.dataset.difficulty;
+  updateDifficultyUI();
+}));
+
 document.querySelectorAll(".mode-tab").forEach((tab) => tab.addEventListener("click", () => {
   const isGame = tab.dataset.mode === "game";
   document.querySelectorAll(".mode-tab").forEach((item) => { item.classList.toggle("is-active", item === tab); item.setAttribute("aria-selected", item === tab); });
@@ -120,4 +139,5 @@ document.querySelectorAll(".mode-tab").forEach((tab) => tab.addEventListener("cl
 }));
 
 window.addEventListener("error", () => showError("앱에서 예기치 않은 오류가 발생했습니다. 페이지를 새로고침해 주세요."));
+updateDifficultyUI();
 resetTest();
