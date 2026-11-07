@@ -18,6 +18,7 @@ env:
 
 jobs:
   docker:
+    name: CI - Build, test, and publish image
     runs-on: ubuntu-latest
 
     steps:
@@ -77,3 +78,96 @@ jobs:
           set -euo pipefail
           docker push "${IMAGE_NAME}:latest"
           docker push "${IMAGE_NAME}:sha-${GITHUB_SHA:0:12}"
+
+  deploy:
+    name: CD - Deploy on Windows self-hosted runner
+    needs: docker
+    if: ${{ needs.docker.result == 'success' && github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') }}
+    runs-on: [self-hosted, Windows, X64]
+    concurrency:
+      group: typesprint-local-deploy
+      cancel-in-progress: false
+    env:
+      DEPLOY_CONTAINER: typing-defense
+      IMAGE_NAME: ${{ secrets.DOCKERHUB_USERNAME }}/typing-defense-hw2
+
+    steps:
+      - name: Log in to Docker Hub
+        shell: powershell
+        env:
+          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+          DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $env:DOCKERHUB_TOKEN | docker login --username $env:DOCKERHUB_USERNAME --password-stdin
+          if ($LASTEXITCODE -ne 0) {
+            throw 'Docker Hub login failed.'
+          }
+
+      - name: Pull CI image by commit SHA
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $tag = "sha-$($env:GITHUB_SHA.Substring(0, 12))"
+          $image = "$($env:IMAGE_NAME):$tag"
+          docker pull $image
+          if ($LASTEXITCODE -ne 0) {
+            throw "Docker image pull failed: $image"
+          }
+
+      - name: Replace TypeSprint container
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $container = $env:DEPLOY_CONTAINER
+          $tag = "sha-$($env:GITHUB_SHA.Substring(0, 12))"
+          $image = "$($env:IMAGE_NAME):$tag"
+          $started = $false
+
+          try {
+            $existing = docker ps --all --quiet --filter "name=^/$container$"
+            if ($existing) {
+              docker rm --force $container
+              if ($LASTEXITCODE -ne 0) {
+                throw "Could not remove existing container: $container"
+              }
+            }
+
+            docker run --detach --name $container --restart unless-stopped --publish 8000:8000 $image
+            if ($LASTEXITCODE -ne 0) {
+              throw "Could not start container: $container"
+            }
+            $started = $true
+          }
+          catch {
+            if ($started) {
+              docker logs $container
+              docker rm --force $container 2>$null
+            }
+            throw
+          }
+
+      - name: Verify local health endpoint
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $healthy = $false
+
+          for ($attempt = 1; $attempt -le 30; $attempt++) {
+            try {
+              $response = Invoke-WebRequest -UseBasicParsing -TimeoutSec 5 -Uri 'http://127.0.0.1:8000/health'
+              if ($response.StatusCode -eq 200 -and $response.Content -match '"status"\s*:\s*"ok"') {
+                $healthy = $true
+                Write-Host "Health check passed: $($response.Content)"
+                break
+              }
+            }
+            catch {
+              Start-Sleep -Seconds 1
+            }
+          }
+
+          if (-not $healthy) {
+            docker logs $env:DEPLOY_CONTAINER
+            throw 'TypeSprint health check failed at http://127.0.0.1:8000/health'
+          }
